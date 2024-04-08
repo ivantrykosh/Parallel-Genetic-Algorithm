@@ -23,7 +23,11 @@ public abstract class Chromosome implements Iterable<Gene> {
     }
 
     public List<Gene> getGenes() {
-        return genes;
+        return new ArrayList<>(genes);
+    }
+
+    public int getSize() {
+        return genes.size();
     }
 
     @Override

@@ -2,9 +2,7 @@ package com.ivantrykosh.app.parallel_genetic_algorithm;
 
 import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Knapsack;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class Population implements Iterable<Chromosome> {
     private final List<Chromosome> chromosomes;
@@ -58,11 +56,15 @@ public class Population implements Iterable<Chromosome> {
     }
 
     public List<Chromosome> getChromosomes() {
-        return chromosomes;
+        return new ArrayList<>(chromosomes);
     }
 
     public Chromosome getChromosome(int index) {
         return chromosomes.get(index);
+    }
+
+    public int getSize() {
+        return chromosomes.size();
     }
 
     public long calculateFitnessForPopulation() {
@@ -74,6 +76,32 @@ public class Population implements Iterable<Chromosome> {
             }
         }
         return fitnessForPopulation;
+    }
+
+    /**
+     * Return sorted chromosomes
+     */
+    public Map<Chromosome, Integer> calculateFitnessForEveryChromosome() {
+        Map<Chromosome, Integer> allChromosomes = new HashMap<>();
+        for (Chromosome chromosome : chromosomes) {
+            int chromosomeFitness = chromosome.calculateFitness();
+            allChromosomes.put(chromosome, chromosomeFitness);
+        }
+
+        List<Map.Entry<Chromosome, Integer>> entries = new ArrayList<>(allChromosomes.entrySet());
+        entries.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
+
+        Map<Chromosome, Integer> sortedChromosomes = new LinkedHashMap<>();
+        for (Map.Entry<Chromosome, Integer> entry : entries) {
+            sortedChromosomes.put(entry.getKey(), entry.getValue());
+        }
+        return sortedChromosomes;
+    }
+
+    public List<Chromosome> getSortedChromosomes() {
+        List<Chromosome> sortedChromosomes = new ArrayList<>(chromosomes);
+        sortedChromosomes.sort((o1, o2) -> Integer.compare(o2.calculateFitness(), o1.calculateFitness()));
+        return sortedChromosomes;
     }
 
     @Override

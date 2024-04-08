@@ -13,6 +13,10 @@ public class Knapsack extends Chromosome {
         this.maxWeight = maxKnapsackWeight;
     }
 
+    public int getMaxWeight() {
+        return maxWeight;
+    }
+
     @Override
     public int calculateFitness() {
         int fitness = 0;
