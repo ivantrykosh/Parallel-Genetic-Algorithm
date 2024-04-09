@@ -35,4 +35,17 @@ public class Knapsack extends Chromosome {
         }
         return fitness;
     }
+
+    @Override
+    public int calculateWeight() {
+        int weight = 0;
+
+        List<Gene> genes = getGenes();
+        List<Item> items = Items.getInstance().getItems();
+        for (int i = 0; i < genes.size(); i++) {
+            byte geneValue = genes.get(i).getGeneValue();
+            weight += items.get(i).getWeight() * geneValue;
+        }
+        return weight;
+    }
 }

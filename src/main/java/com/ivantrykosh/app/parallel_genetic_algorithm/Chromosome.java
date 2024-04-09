@@ -41,4 +41,6 @@ public abstract class Chromosome implements Iterable<Gene> {
     }
 
     public abstract int calculateFitness();
+
+    public abstract int calculateWeight();
 }
