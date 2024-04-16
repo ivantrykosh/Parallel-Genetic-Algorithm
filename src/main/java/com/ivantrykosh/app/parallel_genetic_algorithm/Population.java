@@ -55,6 +55,10 @@ public class Population implements Iterable<Chromosome> {
         return chromosomes.remove(index) != null;
     }
 
+    public boolean deleteAllChromosomes(List<Chromosome> chromosomes) {
+        return this.chromosomes.removeAll(chromosomes);
+    }
+
     public List<Chromosome> getChromosomes() {
         return new ArrayList<>(chromosomes);
     }

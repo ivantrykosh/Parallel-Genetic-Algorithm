@@ -7,7 +7,7 @@ import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Knapsack;
 import java.util.*;
 
 public class GeneticAlgorithm {
-    private final Population population;
+    protected final Population population;
     private final long allItemsValue = Items.getInstance().getItems().stream().map(Item::getValue).reduce(0, Integer::sum);
     private final long allItemsWeight = Items.getInstance().getItems().stream().map(Item::getWeight).reduce(0, Integer::sum);
 
@@ -20,14 +20,18 @@ public class GeneticAlgorithm {
     }
 
     public Chromosome start(int maxIterations) {
-        int iter = 0;
         for (int i = 0; i < maxIterations && !isTerminate(); i++) {
+//            long time1 = System.currentTimeMillis();
             List<Chromosome> individuals = selectIndividuals(population.getSize());
+//            System.out.println(System.currentTimeMillis() - time1);
+//            time1 = System.currentTimeMillis();
             List<Chromosome> offspring = performCrossoverForAllParents(individuals);
             List<Chromosome> newOffspring = performMutation(offspring);
             List<Chromosome> evaluatedOffspring = performEvaluation(newOffspring);
+//            System.out.println(System.currentTimeMillis() - time1);
+//            time1 = System.currentTimeMillis();
             reinsert(evaluatedOffspring);
-            iter = i;
+//            System.out.println(System.currentTimeMillis() - time1);
         }
         return population.getChromosome(population.getBestChromosomeIndex());
     }
@@ -72,7 +76,7 @@ public class GeneticAlgorithm {
             offspring.addAll(performCrossoverForTwoParents(parent1, parent2));
         }
         if (!parents.isEmpty()) {
-            offspring.addAll(performCrossoverForTwoParents(bestParent, parents.get(0)));
+            offspring.add(performCrossoverForTwoParents(bestParent, parents.get(0)).get(0));
         }
         return offspring;
     }
@@ -109,22 +113,21 @@ public class GeneticAlgorithm {
     }
 
     public List<Chromosome> performEvaluation(List<Chromosome> offspring) {
-        List<Chromosome> newOffspring = new ArrayList<>(List.copyOf(offspring));
+        List<Chromosome> newOffspring = new ArrayList<>(offspring);
         newOffspring.removeIf(chromosome -> chromosome.calculateFitness() < 0);
         return newOffspring;
     }
 
     public void reinsert(List<Chromosome> offspring) {
-        for (int i = 0; i < offspring.size(); i++) {
-            int worstChromosomeIndex = population.getWorstChromosomeIndex();
-            population.deleteChromosome(worstChromosomeIndex);
-        }
+        List<Chromosome> oldOffspring = population.getSortedChromosomes();
+        int populationSize = population.getSize();
+        population.deleteAllChromosomes(oldOffspring.subList(populationSize - offspring.size(), populationSize));
         for (Chromosome chromosome : offspring) {
             population.addChromosome(chromosome);
         }
     }
 
-    private boolean isTerminate() {
+    protected boolean isTerminate() {
         int bestChromosomeIndex = population.getBestChromosomeIndex();
         Chromosome bestChromosome = population.getChromosome(bestChromosomeIndex);
 //        double weightRatio = Math.min(((Knapsack) bestChromosome).getMaxWeight() / (double) allItemsWeight, 1L);

@@ -7,6 +7,7 @@ public final class Constants {
     public static final int NUMBER_OF_ITEMS = 100;
     public static final double MUTATION_RATE = 0.01;
     public static final double TERMINATION_VALUE = 0.5;
+    public static final int POPULATION_SIZE = 100; // todo change to 100
 
     private Constants() {
         throw new AssertionError();
