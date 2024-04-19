@@ -12,6 +12,10 @@ public class Population implements Iterable<Chromosome> {
         initializePopulation(populationSize);
     }
 
+    public Population(List<Chromosome> chromosomes) {
+        this.chromosomes = chromosomes;
+    }
+
     private void initializePopulation(int populationSize) {
         for (int i = 0; i < populationSize; i++) {
             Chromosome chromosome = new Knapsack(Constants.NUMBER_OF_ITEMS, Constants.MAX_KNAPSACK_WEIGHT);
@@ -49,6 +53,10 @@ public class Population implements Iterable<Chromosome> {
             return false;
         }
         return chromosomes.add(chromosome);
+    }
+
+    public boolean addAllChromosomes(List<Chromosome> chromosomes) {
+        return this.chromosomes.addAll(chromosomes);
     }
 
     public boolean deleteChromosome(int index) {

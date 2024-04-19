@@ -5,6 +5,7 @@ import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Items;
 import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Knapsack;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class GeneticAlgorithm {
     protected final Population population;
@@ -14,24 +15,21 @@ public class GeneticAlgorithm {
     public GeneticAlgorithm(int populationSize) {
         population = new Population(populationSize);
     }
+    protected GeneticAlgorithm(Population population) {
+        this.population = population;
+    }
 
     public Population getPopulation() {
         return population;
     }
 
     public Chromosome start(int maxIterations) {
-        for (int i = 0; i < maxIterations && !isTerminate(); i++) {
-//            long time1 = System.currentTimeMillis();
+        for (int i = 0; i < maxIterations; i++) {
             List<Chromosome> individuals = selectIndividuals(population.getSize());
-//            System.out.println(System.currentTimeMillis() - time1);
-//            time1 = System.currentTimeMillis();
             List<Chromosome> offspring = performCrossoverForAllParents(individuals);
             List<Chromosome> newOffspring = performMutation(offspring);
             List<Chromosome> evaluatedOffspring = performEvaluation(newOffspring);
-//            System.out.println(System.currentTimeMillis() - time1);
-//            time1 = System.currentTimeMillis();
             reinsert(evaluatedOffspring);
-//            System.out.println(System.currentTimeMillis() - time1);
         }
         return population.getChromosome(population.getBestChromosomeIndex());
     }
@@ -66,12 +64,10 @@ public class GeneticAlgorithm {
         int parentsSize = parents.size();
         Random random = new Random();
         for (int i = 0; i < parentsSize / 2; i++) {
-            int index1 = random.nextInt(0, parents.size());
-            Chromosome parent1 = parents.get(index1);
-            parents.remove(index1);
-            int index2 = random.nextInt(0, parents.size());
-            Chromosome parent2 = parents.get(index2);
-            parents.remove(index2);
+            int index1 = random.nextInt(parents.size());
+            Chromosome parent1 = parents.remove(index1);
+            int index2 = random.nextInt(parents.size());
+            Chromosome parent2 = parents.remove(index2);
 
             offspring.addAll(performCrossoverForTwoParents(parent1, parent2));
         }
@@ -87,8 +83,9 @@ public class GeneticAlgorithm {
     public List<Chromosome> performCrossoverForTwoParents(Chromosome parent1, Chromosome parent2) {
         Chromosome offspring1 = new Knapsack(parent1.getSize(), ((Knapsack) parent1).getMaxWeight());
         Chromosome offspring2 = new Knapsack(parent2.getSize(), ((Knapsack) parent2).getMaxWeight());
+        Random random = new Random();
         for (int i = 0; i < parent1.getSize(); i++) {
-            if (Math.random() < 0.5) {
+            if (random.nextDouble() < 0.5) {
                 offspring1.getGene(i).setGeneValue(parent2.getGene(i).getGeneValue());
                 offspring2.getGene(i).setGeneValue(parent1.getGene(i).getGeneValue());
             } else {
