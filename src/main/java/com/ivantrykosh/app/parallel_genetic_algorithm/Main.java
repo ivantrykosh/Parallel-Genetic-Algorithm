@@ -5,58 +5,47 @@ import com.ivantrykosh.app.parallel_genetic_algorithm.parallel.ParallelGeneticAl
 
 public class Main {
     public static void main(String[] args) {
-        // todo засікати час без ініціалізації рюкзака
+//        example();
         warmup();
+        int[] numberOfThread = { 2, 4, 8, 10 };
         long sumOfExecutionTimeForSGA = 0;
-        long sumOfExecutionTimeForPGA5 = 0;
-        long sumOfExecutionTimeForPGA10 = 0;
-        int repeats = 20;
-        // todo кількість тасок = кількість потоків
+        long[] sumOfExecutionTimeForPGAs = new long[numberOfThread.length];
+        int repeats = 2;
         for (int i = 0; i < repeats; i++) {
             GeneticAlgorithm ga = new GeneticAlgorithm(Constants.POPULATION_SIZE);
-            long time1 = System.currentTimeMillis();
-            Chromosome best;
-            best = ga.start(1000); // change to 10000
-            long time2 = System.currentTimeMillis();
-            System.out.println("SGA:");
-            System.out.printf("Max knapsack weight: %d; Best chromosome: fitness - %d, weight - %d \n", Constants.MAX_KNAPSACK_WEIGHT, best.calculateFitness(), best.calculateWeight());
-            long executionTime = time2 - time1;
-            sumOfExecutionTimeForSGA += executionTime;
-            System.out.printf("Execution time for SGA = %dms \n", executionTime);
+            Result sgaResult = ga.start(1000);
+            System.out.println(sgaResult);
+            sumOfExecutionTimeForSGA += sgaResult.getExecutionTimeInMillis();
 
-            ParallelGeneticAlgorithm pga = new ParallelGeneticAlgorithm(Constants.POPULATION_SIZE, 4);
-            time1 = System.currentTimeMillis();
-            best = pga.start(1000); // change to 10000
-            time2 = System.currentTimeMillis();
-            System.out.println("PGA for 4:");
-            System.out.printf("Max knapsack weight: %d; Best chromosome: fitness - %d, weight - %d \n", Constants.MAX_KNAPSACK_WEIGHT, best.calculateFitness(), best.calculateWeight());
-            executionTime = time2 - time1;
-            sumOfExecutionTimeForPGA5 += executionTime;
-            System.out.printf("Execution time for PGA = %dms \n", executionTime);
+            for (int j = 0; j < numberOfThread.length; j++) {
+                ParallelGeneticAlgorithm pga = new ParallelGeneticAlgorithm(Constants.POPULATION_SIZE, numberOfThread[j]);
+                Result pgaResult = pga.start(1000);
+                System.out.println(pgaResult);
+                sumOfExecutionTimeForPGAs[j] += pgaResult.getExecutionTimeInMillis();
+            }
 
-            pga = new ParallelGeneticAlgorithm(Constants.POPULATION_SIZE, 8);
-            time1 = System.currentTimeMillis();
-            best = pga.start(1000); // change to 10000
-            time2 = System.currentTimeMillis();
-            System.out.println("PGA for 8:");
-            System.out.printf("Max knapsack weight: %d; Best chromosome: fitness - %d, weight - %d \n", Constants.MAX_KNAPSACK_WEIGHT, best.calculateFitness(), best.calculateWeight());
-            executionTime = time2 - time1;
-            sumOfExecutionTimeForPGA10 += executionTime;
-            System.out.printf("Execution time for PGA = %dms \n", executionTime);
-
-            System.out.println("-".repeat(75));
+            System.out.println("-".repeat(100));
         }
         double avgSGA = (double) sumOfExecutionTimeForSGA / repeats;
-        double avgPGA5 = (double) sumOfExecutionTimeForPGA5 / repeats;
-        double avgPGA10 = (double) sumOfExecutionTimeForPGA10 / repeats;
         System.out.printf("Average execution time for SGA = %.3fms\n", avgSGA);
-        System.out.printf("Average execution time for PGA5 = %.3fms\n", avgPGA5);
-        System.out.printf("Average execution time for PGA8 = %.3fms\n", avgPGA10);
-        System.out.printf("Speed up for 4 = %.3f\n", avgSGA / avgPGA5);
-        System.out.printf("Speed up for 8 = %.3f\n", avgSGA / avgPGA10);
+        for (int i = 0; i < numberOfThread.length; i++) {
+            double avgPGA = (double) sumOfExecutionTimeForPGAs[i] / repeats;
+            System.out.printf("Average execution time for PGA (%2d threads) = %9.3fs, speed up = %6.3f\n", numberOfThread[i], avgPGA / 1000, avgSGA / avgPGA);
+        }
+    }
+
+    private static void example() {
+        // example
     }
 
     private static void warmup() {
-        // todo
+        long sum = 0;
+        for (int i = 0; i < 10; i++) {
+            for (long j = 0; j < 10000000000L; j++) {
+                sum += j - (j / 2) * 2;
+            }
+            sum = 0;
+        }
+        System.out.println(sum);
     }
 }

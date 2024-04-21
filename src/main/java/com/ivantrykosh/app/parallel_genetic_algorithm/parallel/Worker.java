@@ -1,6 +1,7 @@
 package com.ivantrykosh.app.parallel_genetic_algorithm.parallel;
 
 import com.ivantrykosh.app.parallel_genetic_algorithm.Chromosome;
+import com.ivantrykosh.app.parallel_genetic_algorithm.Constants;
 import com.ivantrykosh.app.parallel_genetic_algorithm.Population;
 
 import java.util.List;
@@ -26,8 +27,8 @@ public class Worker implements Callable<Chromosome> {
             List<Chromosome> newOffspring = pga.performMutation(offspring);
             List<Chromosome> evaluatedOffspring = pga.performEvaluation(newOffspring);
             pga.reinsert(evaluatedOffspring, population);
-            if (i % 50 == 49) {
-                List<Chromosome> toMigrate = population.getSortedChromosomes().subList(0, population.getSize() / 10);
+            if (i % Constants.ITERATION_FOR_MIGRATION == 0) {
+                List<Chromosome> toMigrate = population.getSortedChromosomes().subList(0, (int) (population.getSize() * Constants.MIGRATION_PERCENTAGE));
                 population.deleteAllChromosomes(toMigrate);
                 population.addAllChromosomes(pga.migrate(toMigrate));
             }

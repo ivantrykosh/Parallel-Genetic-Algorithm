@@ -1,34 +1,28 @@
 package com.ivantrykosh.app.parallel_genetic_algorithm.parallel;
 
 import com.ivantrykosh.app.parallel_genetic_algorithm.*;
-import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Knapsack;
 
 import java.util.*;
 import java.util.concurrent.*;
 
 public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
-    private final Object migrationObject = new Object();
-    private ExecutorService executorService;
-    private final int numberOfThread;
-    int index = 0;
+    private final int numberOfThreads;
 
-    public ParallelGeneticAlgorithm(int populationSize, int numberOfThread) {
+    public ParallelGeneticAlgorithm(int populationSize, int numberOfThreads) {
         super(populationSize);
-        this.numberOfThread = numberOfThread;
-    }
-
-    private ParallelGeneticAlgorithm(Population population, int numberOfThread) {
-        super(population);
-        this.numberOfThread = numberOfThread;
+        this.numberOfThreads = numberOfThreads;
     }
 
     @Override
-    public Chromosome start(int maxIterations) {
-        executorService = Executors.newFixedThreadPool(numberOfThread);
+    public Result start(int maxIterations) {
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+
+        long time1 = System.currentTimeMillis();
+
         List<Chromosome> populationList = this.population.getChromosomes();
         Collections.shuffle(populationList);
 
-        int numberOfParts = numberOfThread;
+        int numberOfParts = numberOfThreads;
         List<Future<Chromosome>> futureOffspring = new ArrayList<>(numberOfParts);
         int sizeOfPart = population.getSize() / numberOfParts;
         for (int j = 0; j < numberOfParts; j++) {
@@ -45,6 +39,10 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
+        Population bestPopulation = new Population(bestOffspring);
+        Chromosome bestChromosome = bestPopulation.getChromosome(bestPopulation.getBestChromosomeIndex());
+
+        long executionTime = System.currentTimeMillis() - time1;
 
         executorService.shutdown();
         try {
@@ -58,44 +56,16 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
             executorService.shutdownNow();
             Thread.currentThread().interrupt();
         }
-        Population newPopulation = new Population(bestOffspring);
-        return newPopulation.getChromosome(newPopulation.getBestChromosomeIndex());
+
+        return new Result(bestChromosome, executionTime, numberOfThreads);
     }
 
     /**
-     * Stochastic Universal Sampling
+     * Migration: first thread wait for second and they exchange their chromosomes
      */
-    public List<Chromosome> selectIndividuals(int numberOfIndividualsToSelect, Population population) {
-        List<Chromosome> sortedChromosomes = population.getSortedChromosomes();
-
-        long populationFitness = population.calculateFitnessForPopulation();
-        int interval = (int) (populationFitness / numberOfIndividualsToSelect);
-        int point = new Random().nextInt(interval);
-
-        int index = 0;
-        long cumulativeFitness = 0;
-        List<Chromosome> individuals = new ArrayList<>(numberOfIndividualsToSelect);
-        for (int i = 0; i < numberOfIndividualsToSelect; i++) {
-            while (sortedChromosomes.get(index).calculateFitness() + cumulativeFitness < point) {
-                cumulativeFitness += sortedChromosomes.get(index).calculateFitness();
-                index = (index + 1) % sortedChromosomes.size();
-            }
-            individuals.add(sortedChromosomes.get(index));
-            point += interval;
-        }
-        return individuals;
-    }
-
-    public void reinsert(List<Chromosome> offspring, Population population) {
-        List<Chromosome> oldOffspring = population.getSortedChromosomes();
-        int populationSize = population.getSize();
-        population.deleteAllChromosomes(oldOffspring.subList(populationSize - offspring.size(), populationSize));
-        for (Chromosome chromosome : offspring) {
-            population.addChromosome(chromosome);
-        }
-    }
-
-    List<Chromosome> migrateChromosomes = new ArrayList<>();
+    private int index = 0;
+    private final Object migrationObject = new Object();
+    private List<Chromosome> migrateChromosomes = new ArrayList<>();
     public List<Chromosome> migrate(List<Chromosome> toMigrate) {
         List<Chromosome> migratedChromosomes = null;
         synchronized (migrationObject) {
@@ -103,7 +73,7 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
             while (index % 2 == 1) {
                 try {
                     migrateChromosomes = new ArrayList<>(toMigrate);
-                    if (index == numberOfThread) {
+                    if (index == numberOfThreads) {
                         index = 0;
                         migratedChromosomes = new ArrayList<>(migrateChromosomes);
                         break;
@@ -112,7 +82,7 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
                         migratedChromosomes = new ArrayList<>(migrateChromosomes);
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             }
             if (migratedChromosomes == null) {

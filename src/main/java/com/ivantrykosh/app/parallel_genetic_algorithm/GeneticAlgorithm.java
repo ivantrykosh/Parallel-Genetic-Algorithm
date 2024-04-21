@@ -1,43 +1,36 @@
 package com.ivantrykosh.app.parallel_genetic_algorithm;
 
-import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Item;
-import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Items;
 import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Knapsack;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class GeneticAlgorithm {
     protected final Population population;
-    private final long allItemsValue = Items.getInstance().getItems().stream().map(Item::getValue).reduce(0, Integer::sum);
-    private final long allItemsWeight = Items.getInstance().getItems().stream().map(Item::getWeight).reduce(0, Integer::sum);
 
     public GeneticAlgorithm(int populationSize) {
         population = new Population(populationSize);
     }
-    protected GeneticAlgorithm(Population population) {
-        this.population = population;
-    }
 
-    public Population getPopulation() {
-        return population;
-    }
+    public Result start(int maxIterations) {
+        long time1 = System.currentTimeMillis();
 
-    public Chromosome start(int maxIterations) {
         for (int i = 0; i < maxIterations; i++) {
-            List<Chromosome> individuals = selectIndividuals(population.getSize());
+            List<Chromosome> individuals = selectIndividuals(population.getSize(), population);
             List<Chromosome> offspring = performCrossoverForAllParents(individuals);
             List<Chromosome> newOffspring = performMutation(offspring);
             List<Chromosome> evaluatedOffspring = performEvaluation(newOffspring);
-            reinsert(evaluatedOffspring);
+            reinsert(evaluatedOffspring, population);
         }
-        return population.getChromosome(population.getBestChromosomeIndex());
+        Chromosome bestChromosome = population.getChromosome(population.getBestChromosomeIndex());
+
+        long executionTime = System.currentTimeMillis() - time1;
+        return new Result(bestChromosome, executionTime, 1);
     }
 
     /**
      * Stochastic Universal Sampling
      */
-    public List<Chromosome> selectIndividuals(int numberOfIndividualsToSelect) {
+    public List<Chromosome> selectIndividuals(int numberOfIndividualsToSelect, Population population) {
         List<Chromosome> sortedChromosomes = population.getSortedChromosomes();
 
         long populationFitness = population.calculateFitnessForPopulation();
@@ -58,6 +51,9 @@ public class GeneticAlgorithm {
         return individuals;
     }
 
+    /**
+     * Choose two random parents and perform crossover
+     */
     public List<Chromosome> performCrossoverForAllParents(List<Chromosome> parents) {
         List<Chromosome> offspring = new ArrayList<>(parents.size());
         Chromosome bestParent = parents.get(0);
@@ -96,6 +92,9 @@ public class GeneticAlgorithm {
         return List.of(offspring1, offspring2);
     }
 
+    /**
+     * Gene mutation (change value to the opposite) with some rate
+     */
     public List<Chromosome> performMutation(List<Chromosome> offspring) {
         List<Chromosome> newOffspring = List.copyOf(offspring);
         Random random = new Random();
@@ -109,26 +108,24 @@ public class GeneticAlgorithm {
         return newOffspring;
     }
 
+    /**
+     * Evaluation: If chromosome is not fit, remove one from offspring
+     */
     public List<Chromosome> performEvaluation(List<Chromosome> offspring) {
         List<Chromosome> newOffspring = new ArrayList<>(offspring);
         newOffspring.removeIf(chromosome -> chromosome.calculateFitness() < 0);
         return newOffspring;
     }
 
-    public void reinsert(List<Chromosome> offspring) {
+    /**
+     * Remove the worst fittest chromosomes and add new chromosomes to population
+     */
+    public void reinsert(List<Chromosome> offspring, Population population) {
         List<Chromosome> oldOffspring = population.getSortedChromosomes();
         int populationSize = population.getSize();
         population.deleteAllChromosomes(oldOffspring.subList(populationSize - offspring.size(), populationSize));
         for (Chromosome chromosome : offspring) {
             population.addChromosome(chromosome);
         }
-    }
-
-    protected boolean isTerminate() {
-        int bestChromosomeIndex = population.getBestChromosomeIndex();
-        Chromosome bestChromosome = population.getChromosome(bestChromosomeIndex);
-//        double weightRatio = Math.min(((Knapsack) bestChromosome).getMaxWeight() / (double) allItemsWeight, 1L);
-        int idealFitness = (int) (Constants.TERMINATION_VALUE * allItemsValue);
-        return bestChromosome.calculateFitness() >= idealFitness;
     }
 }
