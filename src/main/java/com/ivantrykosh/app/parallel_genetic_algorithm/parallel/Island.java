@@ -7,13 +7,13 @@ import com.ivantrykosh.app.parallel_genetic_algorithm.Population;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public class Worker implements Callable<Chromosome> {
+public class Island implements Callable<Chromosome> {
     private final ParallelGeneticAlgorithm pga;
     private final Population population;
     private final int maxIterations;
 
 
-    public Worker(ParallelGeneticAlgorithm pga, int maxIterations, Population population) {
+    public Island(ParallelGeneticAlgorithm pga, int maxIterations, Population population) {
         this.pga = pga;
         this.maxIterations = maxIterations;
         this.population = population;

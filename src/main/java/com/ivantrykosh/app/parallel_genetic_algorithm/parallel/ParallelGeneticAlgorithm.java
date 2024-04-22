@@ -26,9 +26,9 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
         List<Future<Chromosome>> futureOffspring = new ArrayList<>(numberOfParts);
         int sizeOfPart = population.getSize() / numberOfParts;
         for (int j = 0; j < numberOfParts; j++) {
-            List<Chromosome> subPopulation = new ArrayList<>(populationList.subList(j * sizeOfPart, (j + 1) * sizeOfPart)); // todo винести sublist у Worker
-            Worker worker = new Worker(this, maxIterations, new Population(subPopulation));
-            futureOffspring.add(executorService.submit(worker));
+            List<Chromosome> subPopulation = new ArrayList<>(populationList.subList(j * sizeOfPart, (j + 1) * sizeOfPart)); // todo винести sublist у Island
+            Island island = new Island(this, maxIterations, new Population(subPopulation));
+            futureOffspring.add(executorService.submit(island));
         }
 
         List<Chromosome> bestOffspring = new ArrayList<>(numberOfParts);

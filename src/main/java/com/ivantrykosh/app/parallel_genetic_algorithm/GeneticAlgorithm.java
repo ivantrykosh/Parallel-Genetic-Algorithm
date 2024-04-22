@@ -1,8 +1,10 @@
 package com.ivantrykosh.app.parallel_genetic_algorithm;
 
 import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Knapsack;
+import com.ivantrykosh.app.parallel_genetic_algorithm.parallel.Island;
 
 import java.util.*;
+import java.util.concurrent.Future;
 
 public class GeneticAlgorithm {
     protected final Population population;
@@ -14,14 +16,46 @@ public class GeneticAlgorithm {
     public Result start(int maxIterations) {
         long time1 = System.currentTimeMillis();
 
-        for (int i = 0; i < maxIterations; i++) {
-            List<Chromosome> individuals = selectIndividuals(population.getSize(), population);
-            List<Chromosome> offspring = performCrossoverForAllParents(individuals);
-            List<Chromosome> newOffspring = performMutation(offspring);
-            List<Chromosome> evaluatedOffspring = performEvaluation(newOffspring);
-            reinsert(evaluatedOffspring, population);
+        List<Chromosome> populationList = this.population.getChromosomes();
+        Collections.shuffle(populationList);
+
+        int numberOfParts = 5;
+        List<Population> islands = new ArrayList<>(numberOfParts);
+        int sizeOfPart = population.getSize() / numberOfParts;
+        for (int j = 0; j < numberOfParts; j++) {
+            List<Chromosome> subPopulation = new ArrayList<>(populationList.subList(j * sizeOfPart, (j + 1) * sizeOfPart));
+            islands.add(new Population(subPopulation));
         }
-        Chromosome bestChromosome = population.getChromosome(population.getBestChromosomeIndex());
+
+        for (int i = 0; i < maxIterations; i++) {
+            for (Population island : islands) {
+                List<Chromosome> individuals = selectIndividuals(island.getSize(), island);
+                List<Chromosome> offspring = performCrossoverForAllParents(individuals);
+                List<Chromosome> newOffspring = performMutation(offspring);
+                List<Chromosome> evaluatedOffspring = performEvaluation(newOffspring);
+                reinsert(evaluatedOffspring, island);
+            }
+            if (i % Constants.ITERATION_FOR_MIGRATION == 0) {
+                List<List<Chromosome>> chromosomesToMigrate = new ArrayList<>(numberOfParts);
+                for (Population island : islands) {
+                    List<Chromosome> toMigrate = island.getSortedChromosomes().subList(0, (int) (island.getSize() * Constants.MIGRATION_PERCENTAGE));
+                    chromosomesToMigrate.add(toMigrate);
+                    island.deleteAllChromosomes(toMigrate);
+                }
+                Random random = new Random();
+                for (Population island : islands) {
+                    List<Chromosome> migratedChromosomes = chromosomesToMigrate.remove(random.nextInt(chromosomesToMigrate.size()));
+                    island.addAllChromosomes(migratedChromosomes);
+                }
+            }
+        }
+
+        List<Chromosome> bestOffspring = new ArrayList<>(numberOfParts);
+        for (Population island : islands) {
+            bestOffspring.add(island.getChromosome(island.getBestChromosomeIndex()));
+        }
+        Population bestPopulation = new Population(bestOffspring);
+        Chromosome bestChromosome = bestPopulation.getChromosome(bestPopulation.getBestChromosomeIndex());
 
         long executionTime = System.currentTimeMillis() - time1;
         return new Result(bestChromosome, executionTime, 1);
