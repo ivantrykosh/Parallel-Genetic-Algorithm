@@ -8,6 +8,10 @@ public class Main {
     public static void main(String[] args) {
 //        example();
         warmup();
+        test();
+    }
+
+    private static void test() {
         int[] numberOfThread = { 2, 4, 8, 10 };
         long sumOfExecutionTimeForSGA = 0;
         long[] sumOfExecutionTimeForPGAs = new long[numberOfThread.length];
@@ -28,7 +32,7 @@ public class Main {
             System.out.println("-".repeat(100));
         }
         double avgSGA = (double) sumOfExecutionTimeForSGA / repeats;
-        System.out.printf("Average execution time for SGA = %.3fms\n", avgSGA);
+        System.out.printf("Average execution time for SGA = %.3fs\n", avgSGA / 1000);
         for (int i = 0; i < numberOfThread.length; i++) {
             double avgPGA = (double) sumOfExecutionTimeForPGAs[i] / repeats;
             System.out.printf("Average execution time for PGA (%2d threads) = %9.3fs, speed up = %6.3f\n", numberOfThread[i], avgPGA / 1000, avgSGA / avgPGA);
@@ -36,7 +40,7 @@ public class Main {
     }
 
     private static void example() {
-        // You need to change to example parameters in Constants
+        // You need to change to example parameters in Constants and change to example instance in Items
         System.out.println("Example:");
         System.out.println(Items.getInstance());
         int[] numberOfThread = { 2, 4, 8, 10 };

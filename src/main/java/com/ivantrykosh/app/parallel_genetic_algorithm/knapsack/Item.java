@@ -7,10 +7,14 @@ public class Item {
     private final int value;
 
     public Item(int maxItemWeight, int maxItemValue) {
+        this(1, maxItemWeight, 1, maxItemValue);
+    }
+
+    public Item(int minItemWeight, int maxItemWeight, int minItemValue, int maxItemValue) {
         Random random = new Random();
 
-        weight = random.nextInt(1, maxItemWeight);
-        value = random.nextInt(1, maxItemValue);
+        weight = random.nextInt(minItemWeight, maxItemWeight);
+        value = random.nextInt(minItemValue, maxItemValue);
     }
 
     public int getWeight() {

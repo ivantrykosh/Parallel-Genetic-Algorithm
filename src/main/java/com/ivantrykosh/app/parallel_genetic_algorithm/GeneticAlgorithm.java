@@ -1,10 +1,8 @@
 package com.ivantrykosh.app.parallel_genetic_algorithm;
 
 import com.ivantrykosh.app.parallel_genetic_algorithm.knapsack.Knapsack;
-import com.ivantrykosh.app.parallel_genetic_algorithm.parallel.Island;
 
 import java.util.*;
-import java.util.concurrent.Future;
 
 public class GeneticAlgorithm {
     protected final Population population;

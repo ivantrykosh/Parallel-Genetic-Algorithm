@@ -15,9 +15,9 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
 
     @Override
     public Result start(int maxIterations) {
-        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
-
         long time1 = System.currentTimeMillis();
+
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
 
         List<Chromosome> populationList = this.population.getChromosomes();
         Collections.shuffle(populationList);
@@ -26,7 +26,7 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
         List<Future<Chromosome>> futureOffspring = new ArrayList<>(numberOfParts);
         int sizeOfPart = population.getSize() / numberOfParts;
         for (int j = 0; j < numberOfParts; j++) {
-            List<Chromosome> subPopulation = new ArrayList<>(populationList.subList(j * sizeOfPart, (j + 1) * sizeOfPart)); // todo винести sublist у Island
+            List<Chromosome> subPopulation = new ArrayList<>(populationList.subList(j * sizeOfPart, (j + 1) * sizeOfPart));
             Island island = new Island(this, maxIterations, new Population(subPopulation));
             futureOffspring.add(executorService.submit(island));
         }
@@ -42,8 +42,6 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
         Population bestPopulation = new Population(bestOffspring);
         Chromosome bestChromosome = bestPopulation.getChromosome(bestPopulation.getBestChromosomeIndex());
 
-        long executionTime = System.currentTimeMillis() - time1;
-
         executorService.shutdown();
         try {
             if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
@@ -57,38 +55,30 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
             Thread.currentThread().interrupt();
         }
 
+        long executionTime = System.currentTimeMillis() - time1;
         return new Result(bestChromosome, executionTime, numberOfThreads);
     }
 
     /**
-     * Migration: first thread wait for second and they exchange their chromosomes
+     * Migration: threads wait for each other and then exchange their migrants
      */
     private int index = 0;
     private final Object migrationObject = new Object();
-    private List<Chromosome> migrateChromosomes = new ArrayList<>();
+    private final List<List<Chromosome>> chromosomesToMigrate = new ArrayList<>();
     public List<Chromosome> migrate(List<Chromosome> toMigrate) {
-        List<Chromosome> migratedChromosomes = null;
+        List<Chromosome> migratedChromosomes;
         synchronized (migrationObject) {
             index++;
-            while (index % 2 == 1) {
+            chromosomesToMigrate.add(toMigrate);
+            while (index != numberOfThreads && index != 0) {
                 try {
-                    migrateChromosomes = new ArrayList<>(toMigrate);
-                    if (index == numberOfThreads) {
-                        index = 0;
-                        migratedChromosomes = new ArrayList<>(migrateChromosomes);
-                        break;
-                    } else {
-                        migrationObject.wait();
-                        migratedChromosomes = new ArrayList<>(migrateChromosomes);
-                    }
+                    migrationObject.wait();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
             }
-            if (migratedChromosomes == null) {
-                migratedChromosomes = new ArrayList<>(migrateChromosomes);
-                migrateChromosomes = toMigrate;
-            }
+            migratedChromosomes = chromosomesToMigrate.remove(new Random().nextInt(chromosomesToMigrate.size()));
+            index = 0;
             migrationObject.notifyAll();
         }
         return migratedChromosomes;
