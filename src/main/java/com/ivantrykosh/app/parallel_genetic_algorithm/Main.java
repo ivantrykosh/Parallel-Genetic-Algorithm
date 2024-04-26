@@ -6,6 +6,7 @@ import com.ivantrykosh.app.parallel_genetic_algorithm.parallel.ParallelGeneticAl
 
 public class Main {
     public static void main(String[] args) {
+        Items.getInstance();
 //        example();
         warmup();
         test();
