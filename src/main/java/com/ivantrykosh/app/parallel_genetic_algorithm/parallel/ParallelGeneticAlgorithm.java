@@ -22,19 +22,47 @@ public class ParallelGeneticAlgorithm extends GeneticAlgorithm {
         List<Chromosome> populationList = this.population.getChromosomes();
         Collections.shuffle(populationList);
 
-        int numberOfParts = numberOfThreads;
-        List<Future<Chromosome>> futureOffspring = new ArrayList<>(numberOfParts);
+        int numberOfParts = 20;
+        List<Future<Population>> futureOffspring = new ArrayList<>(numberOfParts);
         int sizeOfPart = population.getSize() / numberOfParts;
         for (int j = 0; j < numberOfParts; j++) {
             List<Chromosome> subPopulation = new ArrayList<>(populationList.subList(j * sizeOfPart, (j + 1) * sizeOfPart));
-            Island island = new Island(this, maxIterations, new Population(subPopulation));
+            Island island = new Island(this, Constants.ITERATION_FOR_MIGRATION, new Population(subPopulation));
             futureOffspring.add(executorService.submit(island));
         }
 
+        try {
+            for (int i = 0; i < maxIterations / Constants.ITERATION_FOR_MIGRATION; i++) {
+                List<Population> islands = new ArrayList<>(numberOfParts);
+                for (Future<Population> future : futureOffspring) {
+                    islands.add(future.get());
+                }
+                List<List<Chromosome>> chromosomesToMigrate = new ArrayList<>(numberOfParts);
+                for (Population island : islands) {
+                    List<Chromosome> toMigrate = island.getSortedChromosomes().subList(0, (int) (island.getSize() * Constants.MIGRATION_PERCENTAGE));
+                    chromosomesToMigrate.add(toMigrate);
+                    island.deleteAllChromosomes(toMigrate);
+                }
+                Collections.shuffle(chromosomesToMigrate);
+                for (int j = 0; j < islands.size(); j++) {
+                    islands.get(j).addAllChromosomes(chromosomesToMigrate.get(j));
+                }
+                futureOffspring.clear();
+                for (Population island : islands) {
+                    Island islandPopulation = new Island(this, Constants.ITERATION_FOR_MIGRATION, island);
+                    futureOffspring.add(executorService.submit(islandPopulation));
+                }
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+
+
         List<Chromosome> bestOffspring = new ArrayList<>(numberOfParts);
         try {
-            for (Future<Chromosome> future : futureOffspring) {
-                bestOffspring.add(future.get());
+            for (Future<Population> future : futureOffspring) {
+                Population population = future.get();
+                bestOffspring.add(population.getChromosome(population.getBestChromosomeIndex()));
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);

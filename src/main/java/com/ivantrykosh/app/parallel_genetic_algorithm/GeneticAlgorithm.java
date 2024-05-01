@@ -17,7 +17,7 @@ public class GeneticAlgorithm {
         List<Chromosome> populationList = this.population.getChromosomes();
         Collections.shuffle(populationList);
 
-        int numberOfParts = 5;
+        int numberOfParts = 20;
         List<Population> islands = new ArrayList<>(numberOfParts);
         int sizeOfPart = population.getSize() / numberOfParts;
         for (int j = 0; j < numberOfParts; j++) {
@@ -40,10 +40,9 @@ public class GeneticAlgorithm {
                     chromosomesToMigrate.add(toMigrate);
                     island.deleteAllChromosomes(toMigrate);
                 }
-                Random random = new Random();
-                for (Population island : islands) {
-                    List<Chromosome> migratedChromosomes = chromosomesToMigrate.remove(random.nextInt(chromosomesToMigrate.size()));
-                    island.addAllChromosomes(migratedChromosomes);
+                Collections.shuffle(chromosomesToMigrate);
+                for (int j = 0; j < islands.size(); j++) {
+                    islands.get(j).addAllChromosomes(chromosomesToMigrate.get(j));
                 }
             }
         }
