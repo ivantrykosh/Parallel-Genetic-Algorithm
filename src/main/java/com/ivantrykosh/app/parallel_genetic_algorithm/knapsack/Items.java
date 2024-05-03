@@ -19,11 +19,11 @@ public final class Items {
     
     private Items() {
         for (int i = 0; i < Constants.NUMBER_OF_ITEMS / 2; i++) {
-            Item newItem = new Item(1, 10, 300, 351);
+            Item newItem = new Item(1, 10, 300, 350);
             items.add(newItem);
         }
         for (int i = Constants.NUMBER_OF_ITEMS / 2; i < Constants.NUMBER_OF_ITEMS; i++) {
-            Item newItem = new Item(300, 351, 1, 10);
+            Item newItem = new Item(300, 350, 1, 10);
             items.add(newItem);
         }
     }
